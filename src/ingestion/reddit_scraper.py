@@ -14,12 +14,31 @@ def initialize_reddit():
         user_agent=REDDIT_USER_AGENT
     )
 
-def scrape_subreddit():
+def scrape_subreddit(SUBREDDIT, TIME_PERIOD):
+    """
+    Scrapes posts from a specified subreddit for a given time period.
+    
+    Args:
+        SUBREDDIT (str): Name of the subreddit to scrape
+        TIME_PERIOD (str): Time filter for posts (e.g. 'day', 'week', 'month', 'year', 'all')
+    
+    Returns:
+        pd.DataFrame: DataFrame containing post data with columns:
+            - id: Unique post identifier
+            - title: Post title
+            - body: Post text content
+            - score: Number of upvotes
+            - created_utc: Post creation timestamp
+            - num_comments: Number of comments on the post
+    """
+    # Initialize Reddit API connection
     reddit = initialize_reddit()
     subreddit = reddit.subreddit(SUBREDDIT)
     
+    # List to store post data
     posts_data = []
     
+    # Iterate through top posts and extract relevant fields
     for post in subreddit.top(time_filter=TIME_PERIOD):
         posts_data.append({
             'id': post.id,
@@ -30,10 +49,11 @@ def scrape_subreddit():
             'num_comments': post.num_comments,
         })
     
+    # Convert list of post dictionaries to DataFrame
     return pd.DataFrame(posts_data)
 
 if __name__ == "__main__":
-    df = scrape_subreddit()
+    df = scrape_subreddit(SUBREDDIT, TIME_PERIOD)
     
     # Create timestamp for file naming
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
