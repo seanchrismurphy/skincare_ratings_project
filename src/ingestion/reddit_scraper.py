@@ -16,9 +16,10 @@ def initialize_reddit():
         user_agent=REDDIT_USER_AGENT
     )
 
-def scrape_subreddit(SUBREDDIT, TIME_PERIOD, limit=1000):
+def scrape_subreddit(SUBREDDIT, TIME_PERIOD='day', limit=100):
     """
     Scrapes posts from a specified subreddit with rate limiting and error handling.
+    Returns DataFrames for posts and comments.
     """
     reddit = initialize_reddit()
     subreddit = reddit.subreddit(SUBREDDIT)
@@ -90,14 +91,52 @@ def scrape_subreddit(SUBREDDIT, TIME_PERIOD, limit=1000):
     
     return posts_df, comments_df
 
+def scrape_multiple_subreddits(subreddits, time_period='day', limit=100):
+    """
+    Scrapes multiple subreddits and combines the results
+    """
+    all_posts = []
+    all_comments = []
+    
+    for subreddit in subreddits:
+        print(f"\nScraping r/{subreddit}...")
+        try:
+            posts_df, comments_df = scrape_subreddit(subreddit, time_period, limit)
+            
+            # Add subreddit column to both DataFrames
+            if not posts_df.empty:
+                posts_df['subreddit'] = subreddit
+                all_posts.append(posts_df)
+            
+            if not comments_df.empty:
+                comments_df['subreddit'] = subreddit
+                all_comments.append(comments_df)
+                
+            print(f"Successfully scraped r/{subreddit}")
+            time.sleep(5)  # Wait between subreddits
+            
+        except Exception as e:
+            print(f"Error scraping r/{subreddit}: {str(e)}")
+            continue
+    
+    # Combine results
+    combined_posts = pd.concat(all_posts, ignore_index=True) if all_posts else pd.DataFrame()
+    combined_comments = pd.concat(all_comments, ignore_index=True) if all_comments else pd.DataFrame()
+    
+    return combined_posts, combined_comments
+
 if __name__ == "__main__":
-    # Add retry logic for the main execution
+    SUBREDDITS = ['AsianBeauty', 'SkincareAddiction', '30PlusSkinCare']
     max_retries = 3
     retry_count = 0
     
     while retry_count < max_retries:
         try:
-            posts_df, comments_df = scrape_subreddit(SUBREDDIT, TIME_PERIOD, limit=100)
+            posts_df, comments_df = scrape_multiple_subreddits(
+                SUBREDDITS,
+                time_period='day',
+                limit=100
+            )
             
             if len(posts_df) > 0:
                 # Create timestamp for file naming
