@@ -20,3 +20,7 @@ mlflow/mlruns/
 # IDE
 .vscode/
 .idea/
+
+# Logs
+*.log
+logs/
